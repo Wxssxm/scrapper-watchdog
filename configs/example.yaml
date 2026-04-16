@@ -1,0 +1,28 @@
+sources:
+  - name: "my_source"
+    # Path to the scraper script, relative to this config file's directory
+    script_path: "scrapers/my_source.py"
+    # URL to scrape (also sent to Claude when building the repair prompt)
+    url: "https://example.com/data"
+    expected_schema:
+      # Column names the output CSV must contain
+      columns: ["title", "price", "date"]
+      # Minimum number of data rows required for the output to be considered healthy
+      min_rows: 10
+    # Where the scraper should write its CSV output
+    output_path: "data/my_source.csv"
+    repair:
+      # How many Claude-assisted repair attempts to make per day before alerting a human
+      max_attempts: 3
+      # Claude model used for repairs
+      model: "claude-opus-4-5"
+      # Optional: open a GitHub Pull Request instead of deploying directly.
+      # Requires GITHUB_TOKEN in the environment.
+      git_pr:
+        enabled: true
+        base_branch: "main"   # PR will target this branch
+    notify:
+      # Slack incoming-webhook URL (use an env-var reference to avoid hardcoding secrets)
+      slack_webhook: "${SLACK_WEBHOOK_URL}"
+      # Email address for human-readable alerts (informational — no SMTP support yet)
+      email: "wassim@example.com"
