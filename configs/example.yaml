@@ -15,7 +15,7 @@ sources:
       # How many Claude-assisted repair attempts to make per day before alerting a human
       max_attempts: 3
       # Claude model used for repairs
-      model: "claude-opus-4-5"
+      model: "claude-opus-4-7"
       # Optional: open a GitHub Pull Request instead of deploying directly.
       # Requires GITHUB_TOKEN in the environment.
       git_pr:

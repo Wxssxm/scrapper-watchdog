@@ -111,7 +111,7 @@ class TestRepairer:
         "url": "https://example.com/data",
         "script_path": "",          # will be filled in fixture
         "expected_schema": SCHEMA,
-        "repair": {"max_attempts": 3, "model": "claude-opus-4-5"},
+        "repair": {"max_attempts": 3, "model": "claude-opus-4-7"},
     }
 
     @pytest.fixture(autouse=True)

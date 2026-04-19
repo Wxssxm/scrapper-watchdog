@@ -1,5 +1,9 @@
 # scraper-watchdog
 
+![CI](https://github.com/Wxssxm/scrapper-watchdog/actions/workflows/ci.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+
 **scraper-watchdog** is a Python library that monitors your web scrapers and automatically repairs them when they break. It runs each scraper, validates the output against a declared schema, and — if the scraper fails — sends the broken script, the live HTML of the target page, and the error to the Claude AI API to generate a repaired version. The repaired script is tested in an isolated sandbox before being deployed, keeping your data pipelines running without manual intervention.
 
 ---
@@ -11,8 +15,8 @@
 ```bash
 pip install scraper-watchdog
 # or, from source:
-git clone https://github.com/your-org/scraper-watchdog.git
-cd scraper-watchdog
+git clone https://github.com/Wxssxm/scrapper-watchdog.git
+cd scrapper-watchdog
 pip install -e ".[dev]"
 ```
 
@@ -39,10 +43,9 @@ sources:
     output_path: "data/my_source.csv"
     repair:
       max_attempts: 3
-      model: "claude-opus-4-5"
+      model: "claude-opus-4-7"
     notify:
       slack_webhook: "${SLACK_WEBHOOK_URL}"
-      email: "you@example.com"
 ```
 
 ### 4. Run
@@ -58,6 +61,8 @@ python -m scraper_watchdog --config configs/example.yaml --all
 scraper-watchdog --config configs/example.yaml --all
 ```
 
+A working example scraper is provided in `scrapers/example_scraper.py`.
+
 ---
 
 ## YAML config reference
@@ -71,9 +76,8 @@ scraper-watchdog --config configs/example.yaml --all
 | `sources[].expected_schema.min_rows` | int | yes | — | Minimum number of data rows required |
 | `sources[].output_path` | string | yes | — | Where the scraper writes its CSV output |
 | `sources[].repair.max_attempts` | int | no | `3` | Max Claude repair attempts per source per day |
-| `sources[].repair.model` | string | no | `claude-opus-4-5` | Claude model used for repairs |
+| `sources[].repair.model` | string | no | `claude-opus-4-7` | Claude model used for repairs |
 | `sources[].notify.slack_webhook` | string | no | — | Slack incoming webhook URL (supports `${ENV_VAR}`) |
-| `sources[].notify.email` | string | no | — | Email address for alerts (informational) |
 
 ---
 
@@ -122,13 +126,15 @@ Attempt counts are persisted in `.watchdog_state.json` (in the config file's dir
 |---|---|---|
 | `ANTHROPIC_API_KEY` | **yes** | Your Anthropic API key. Get one at [console.anthropic.com](https://console.anthropic.com). |
 | `SLACK_WEBHOOK_URL` | no | Slack incoming webhook URL for human-readable alerts. |
+| `GITHUB_TOKEN` | no | GitHub personal access token — only required for PR deploy mode. |
 
 Place these in a `.env` file at the project root; `python-dotenv` loads it automatically.
 
 ```
-# .env
+# .env  (copy from .env.example)
 ANTHROPIC_API_KEY=sk-ant-...
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
+GITHUB_TOKEN=ghp_...
 ```
 
 ---
@@ -146,8 +152,13 @@ scraper-watchdog treats each scraper as a black box. Your scraper must:
 import csv, os, httpx
 from bs4 import BeautifulSoup
 
-url = "https://example.com/data"
-resp = httpx.get(url, headers={"User-Agent": "Mozilla/5.0"})
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
+resp = httpx.get("https://example.com/data", headers=HEADERS, timeout=30)
+resp.raise_for_status()
 soup = BeautifulSoup(resp.text, "lxml")
 
 rows = [
@@ -160,6 +171,19 @@ with open(os.environ["OUTPUT_PATH"], "w", newline="") as f:
     w.writeheader()
     w.writerows(rows)
 ```
+
+See `scrapers/example_scraper.py` for a fully working example scraping Hacker News.
+
+---
+
+## JavaScript-heavy sites & anti-bot measures
+
+scraper-watchdog is designed for **static HTML scraping** (httpx + BeautifulSoup/lxml). If you are targeting sites that rely heavily on JavaScript rendering, keep the following in mind:
+
+- **JS detection**: when the repaired script cannot extract data from static HTML, it raises `NotImplementedError("JS rendering required")`. This surfaces in the logs and triggers a human alert instead of an infinite repair loop.
+- **Proxy rotation**: if your target site rate-limits or bans your IP before the watchdog can even attempt a repair, no amount of AI-generated code will help. Set up proxy rotation at the scraper level (e.g. with `httpx` transport layers or a proxy provider) **before** plugging the scraper into watchdog.
+- **Headers & fingerprinting**: always send realistic headers (`User-Agent`, `Accept-Language`, `Accept`, `Referer`). The example scraper and the Claude repair prompt both include this pattern by default.
+- **Recommended stack for JS-heavy sites**: pair scraper-watchdog with a headless browser layer (Playwright/Selenium) and expose a static-HTML interface to your scraper script. The watchdog then monitors the output schema regardless of the rendering strategy used underneath.
 
 ---
 
@@ -195,3 +219,9 @@ def _send_discord(self, message: str, webhook_url: str) -> None:
 ```
 
 No interface or base class is required — the notifier is intentionally simple and imperative.
+
+---
+
+## License
+
+[MIT](LICENSE)

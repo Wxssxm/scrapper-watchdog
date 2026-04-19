@@ -175,7 +175,7 @@ class Deployer:
             f"- [ ] No hardcoded credentials or URLs\n"
             f"- [ ] Scraper handles edge cases (empty page, rate-limit response)\n\n"
             f"---\n"
-            f"*Opened automatically by [scraper-watchdog](https://github.com/your-org/scraper-watchdog)*"
+            f"*Opened automatically by [scraper-watchdog](https://github.com/Wxssxm/scrapper-watchdog)*"
         )
 
         with httpx.Client(timeout=15) as client:

@@ -78,7 +78,7 @@ class Repairer:
         expected_schema = source_config.get("expected_schema", {})
         expected_columns = expected_schema.get("columns", [])
         min_rows = expected_schema.get("min_rows", 1)
-        model = source_config.get("repair", {}).get("model", "claude-opus-4-5")
+        model = source_config.get("repair", {}).get("model", "claude-opus-4-7")
 
         # 1. Fetch live HTML
         html_sample = self._fetch_html(source_config["url"])
