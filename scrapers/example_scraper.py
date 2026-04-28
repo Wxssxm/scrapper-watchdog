@@ -4,7 +4,7 @@ Example scraper compatible with scraper-watchdog.
 This scraper fetches the Hacker News front page and writes the top stories
 (title, score, url) to the CSV path provided via OUTPUT_PATH.
 
-Run manually:
+Run manually :
     OUTPUT_PATH=data/hn.csv python scrapers/example_scraper.py
 
 With watchdog (after setting up configs/example.yaml):
